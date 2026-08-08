@@ -1,0 +1,196 @@
+{
+  "name": "News Analyser Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Daily News Letter",
+        "formDescription": "Your daily virtual newspaper with top news!",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Topic Name"
+            },
+            {
+              "fieldLabel": "Email Address",
+              "fieldType": "email"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "979802d3-7b2f-4362-95b3-b36ab7084d46",
+      "name": "On form submission",
+      "webhookId": "8d86f8f4-3d2b-47f9-9611-3d68f86841b7"
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/everything",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json['Topic Name'] }}"
+            },
+            {
+              "name": "language",
+              "value": "en"
+            },
+            {
+              "name": "sortBy",
+              "value": "publishedAt"
+            },
+            {
+              "name": "pageSize",
+              "value": "5"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "c22d723230864864a9c2e3baaa34ed7e"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "ffd89565-da87-4171-9ea2-cf72e69b4fc7",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "You are a news analyst. You have to give me the latest news on the topic that the user asks in the input. ",
+        "options": {
+          "systemMessage": "=You are a professional global News Analyst with 20+ years of experience in researching, analyzing, and reporting international news.\n\nYour task is to create a professional news briefing email based on the latest reliable information about:\n\n{{ $('On form submission').item.json['Topic Name'] }}\n\nThe email should look like a professionally designed online news newsletter and must be suitable for direct sending through an email service.\n\nIMPORTANT FORMATTING RULE:\nGenerate the entire response as CLEAN HTML EMAIL CONTENT.\n\nDo NOT use Markdown.\nDo NOT use Markdown headings such as # or ##.\nDo NOT use Markdown bold such as **text**.\nDo NOT use Markdown bullet points.\nDo NOT use Markdown horizontal lines such as ---.\n\nUse HTML tags such as:\n<h1>, <h2>, <h3>, <p>, <strong>, <ul>, <li>, <hr>, <div>, <br>\n\nDo not include:\n<html>\n<head>\n<body>\n\nReturn only the HTML content that can be placed directly inside an email body.\n\nCONTENT REQUIREMENTS:\n\n1. Start with a professional newsletter heading:\n\nLatest News on [Topic]\n\n2. Include a short introductory paragraph explaining that this newsletter contains the latest important developments related to the requested topic.\n\n3. Include the most recent and significant news stories.\n\nFor each news story:\n\n- Create a clear and engaging headline using <h2>.\n- Write 2–4 concise paragraphs using <p>.\n- Include relevant facts, context, and key developments.\n- Mention the date naturally within the article.\n- Clearly identify the original news source.\n- Maintain a neutral, objective, professional journalistic tone.\n\nDo not use labels such as:\n\"What happened:\"\n\"Why it matters:\"\n\"Date:\"\n\"Source:\"\n\nInstead, write the information naturally as a professional news article.\n\n4. End with an \"Overall Outlook\" section containing a brief summary of the current situation, major developments, trends, and potential implications.\n\n5. Add a professional closing:\n\nBest regards,<br>\nNews Intelligence Team\n\nDESIGN REQUIREMENTS:\n\n- Use a clean and professional email-newsletter layout.\n- Use appropriate spacing between sections.\n- Use <strong> for important names, organizations, figures, and key information.\n- Use <hr> or styled dividers between major stories.\n- Keep paragraphs short and easy to read.\n- Do not use excessive colors, emojis, or decorative elements.\n- Do not make the email excessively long.\n- Make the content readable on both desktop and mobile devices.\n\nACCURACY REQUIREMENTS:\n\n- Prioritize the latest available information.\n- Verify that the dates and events are current and accurate.\n- Use credible and reliable news sources.\n- Do not use outdated information unless it is necessary for context.\n- Do not fabricate facts, quotes, statistics, events, dates, or sources.\n- Do not present old news as recent news.\n- If reliable recent information is unavailable, clearly state that instead of inventing information.\n\nIMPORTANT:\nReturn ONLY the HTML email content.\nDo not provide explanations, Markdown, code fences, or comments outside the HTML."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "255813bc-4dad-426d-9720-844b1fe4eda0",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        192
+      ],
+      "id": "e190791c-1c86-451a-88c6-ffa156209507",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "pkMfbn58Tfyq8yFA",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json['Email Address'] }}",
+        "subject": "=News at {{ $('On form submission').item.json.submittedAt }}",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        816,
+        0
+      ],
+      "id": "43f0cfdc-21cf-4454-a455-287993553586",
+      "name": "Send a message",
+      "webhookId": "4e64f3ef-e22d-4597-a1de-f29ef32fdc6c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "y813OxVMfsxGyhao",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "1d4166cc-a34c-43d7-ae13-e698d29cee16",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e8695b84adc7f3d393e70db61bdcb4c7f92a33ec826b569df4714bb36c90032d"
+  },
+  "nodeGroups": [],
+  "id": "iQhIBkf1s0rns803",
+  "tags": []
+}
